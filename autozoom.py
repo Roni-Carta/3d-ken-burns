@@ -51,10 +51,17 @@ exec(open('./models/pointcloud-inpainting.py', 'r').read())
 
 arguments_strIn = './images/doublestrike.jpg'
 arguments_strOut = './autozoom.mp4'
+boomerang_clip = True
+zoom_duration = 3.0
+frame_rate = 25
 
 for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:] + '=' for strParameter in sys.argv[1::2] ])[0]:
 	if strOption == '--in' and strArgument != '': arguments_strIn = strArgument # path to the input image
 	if strOption == '--out' and strArgument != '': arguments_strOut = strArgument # path to where the output should be stored
+	if strOption == '--boomerang' and strArgument != '': boomerang_clip = int(strArgument) # 0 or 1 if 1 the clip will zoom in then out, if 0 it will just zoom in
+	if strOption == '--duration' and strArgument != '': zoom_duration = float(strArgument) # duration of the zoom of the clip in seconds
+	if strOption == '--fps' and strArgument != '': frame_rate = int(strArgument) # frame rate of the clip
+	if strOption == '--mode' and strArgument != '': mode = int(strArgument) # frame rate of the clip
 # end
 
 ##########################################################
@@ -62,6 +69,7 @@ for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:]
 if __name__ == '__main__':
 	npyImage = cv2.imread(filename=arguments_strIn, flags=cv2.IMREAD_COLOR)
 
+	zoom_steps = int(zoom_duration * frame_rate)
 	intWidth = npyImage.shape[1]
 	intHeight = npyImage.shape[0]
 
@@ -74,25 +82,66 @@ if __name__ == '__main__':
 
 	process_load(npyImage, {})
 
-	objFrom = {
-		'fltCenterU': intWidth / 2.0,
-		'fltCenterV': intHeight / 2.0,
-		'intCropWidth': int(math.floor(0.97 * intWidth)),
-		'intCropHeight': int(math.floor(0.97 * intHeight))
-	}
+	
 
-	objTo = process_autozoom({
-		'fltShift': 100.0,
-		'fltZoom': 1.25,
-		'objFrom': objFrom
-	})
+	if mode == 1:
+		# Zoom Mode
+		objFrom = {
+			'fltCenterU': intWidth / 2.0,
+			'fltCenterV': intHeight / 2.0,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
+
+		objTo = process_autozoom({
+			'fltShift': 100.0,
+			'fltZoom': 1.25,
+			'objFrom': objFrom
+		})
+
+	elif mode == 2:
+		# Translate to right
+		objFrom = {
+			'fltCenterU': intWidth / 2.0,
+			'fltCenterV': intHeight / 2.0,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
+
+		objTo = {
+			'fltCenterU': intWidth / 1.9,
+			'fltCenterV': intHeight / 2.0,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
+
+	elif mode == 3:
+		# Translate to left
+		objFrom = {
+			'fltCenterU': intWidth / 2.9,
+			'fltCenterV': intHeight / 2.0,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
+
+		objTo = {
+			'fltCenterU': intWidth / 2.0,
+			'fltCenterV': intHeight / 2.0,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
+	
 
 	npyResult = process_kenburns({
-		'fltSteps': numpy.linspace(0.0, 1.0, 75).tolist(),
+		'fltSteps': numpy.linspace(0.0, 1.0, zoom_steps).tolist(),
 		'objFrom': objFrom,
 		'objTo': objTo,
 		'boolInpaint': True
 	})
-
-	moviepy.editor.ImageSequenceClip(sequence=[ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ], fps=25).write_videofile(arguments_strOut)
+	
+	if boomerang_clip:
+		frames = [ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ]
+	else:
+		frames = [ npyFrame[:, :, ::-1] for npyFrame in npyResult ]
+	moviepy.editor.ImageSequenceClip(sequence = frames, fps=frame_rate).write_videofile(arguments_strOut)
 # end
