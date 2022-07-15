@@ -143,5 +143,5 @@ if __name__ == '__main__':
 		frames = [ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ]
 	else:
 		frames = [ npyFrame[:, :, ::-1] for npyFrame in npyResult ]
-	moviepy.editor.ImageSequenceClip(sequence = frames, fps=frame_rate).write_videofile(arguments_strOut)
+	moviepy.editor.ImageSequenceClip(sequence = frames, fps=frame_rate).write_videofile(arguments_strOut, codec="mpeg4")
 # end
