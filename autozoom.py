@@ -131,6 +131,21 @@ if __name__ == '__main__':
 			'intCropHeight': int(math.floor(0.97 * intHeight))
 		}
 	
+	elif mode == 4:
+		# Up to down
+		objFrom = {
+			'fltCenterU': intWidth / 2.0,
+			'fltCenterV': intHeight / 2.0,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
+
+		objTo = {
+			'fltCenterU': intWidth / 2.0,
+			'fltCenterV': intHeight / 1.9,
+			'intCropWidth': int(math.floor(0.97 * intWidth)),
+			'intCropHeight': int(math.floor(0.97 * intHeight))
+		}
 
 	npyResult = process_kenburns({
 		'fltSteps': numpy.linspace(0.0, 1.0, zoom_steps).tolist(),
@@ -143,5 +158,5 @@ if __name__ == '__main__':
 		frames = [ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ]
 	else:
 		frames = [ npyFrame[:, :, ::-1] for npyFrame in npyResult ]
-	moviepy.editor.ImageSequenceClip(sequence = frames, fps=frame_rate).write_videofile(arguments_strOut, codec="mpeg4")
+	moviepy.editor.ImageSequenceClip(sequence = frames, fps=frame_rate).write_videofile(arguments_strOut, codec="libx264")
 # end
